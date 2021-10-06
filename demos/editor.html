@@ -14,6 +14,8 @@
 
 <head>
 	<title>Spline editor</title>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<meta content="utf-8" http-equiv="encoding">
 
 	<style>
 		body {
@@ -138,6 +140,7 @@
 			<input id="chkFill" type="checkbox" checked>
 
 			<button onclick="randomize();drawCurveDemo()">Randomize</button>
+			<button onclick="saveSpline()">Save as...</button>
 		</div>
 
 		<div id="editContainer">
@@ -252,13 +255,14 @@
 		}
 		
 		// Show calculated points
-		const calculatedPoints = getCurvePoints(pts, o.tension, o.segments, o.closed);
+		const calculatedPoints = getCurvePoints(pts, o.tension, o.segments, o.closed);		
 		console.info('Calculated points', calculatedPoints);
 		ctx.lineWidth = 1;
 		for(var i = 0; i < calculatedPoints.length; i += 2) {
 			ctx.strokeStyle = 'rgba(0,0,255,0.5)';
 			ctx.strokeRect(calculatedPoints[i] - 1, calculatedPoints[i+1] - 1, 2, 2);
 		}
+		window.calculatedPoints = calculatedPoints;
 
 		// Remove old drag handles
 		document.querySelectorAll('.editHandle').forEach(el => el.remove());
@@ -307,7 +311,37 @@
 			return false;
 		});
 	}
+	
+	function saveSpline() {
+		var o = new curveOptions();
+		var saveData = {
+			application: 'Cardinal spline editor',
+			version: 0.1,
+			isClosed: o.closed,
+			isFilled: o.fill,
+			arePointsVisible: o.points,
+			numberOfSegments: o.segments,
+			tension: o.tension,
+			originalPoints: flatPointsToObjList(pts),
+			calculatedPoints: flatPointsToObjList(calculatedPoints)
+		};
+		
+		saveTextAs(JSON.stringify(saveData, null, 2), 'test.spline.json', 'utf-8');
+	}
+	
+	function flatPointsToObjList(flatPoints) {
+		var objList = [];
+		for (var i = 0; i < flatPoints.length; i += 2) {
+			objList.push({
+				x: flatPoints[i],
+				y: flatPoints[i + 1]
+			});
+		}
+		return objList;
+	}
 
 </script>
+<script src="FileSaver.js"></script>
+
 </body>
 </html>
