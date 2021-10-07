@@ -141,7 +141,13 @@
 
 			<button onclick="randomize();drawCurveDemo()">Randomize</button>
 			<button onclick="saveSpline()">Save as...</button>
-		</div>
+			<div>
+				<label>
+					Load:
+					<input id="fileToLoad" oninput="loadSpline()" type="file" accept=".json" />
+				</label>
+			</div>
+	   </div>
 
 		<div id="editContainer">
 			<canvas id="demoCanvas" width="512" height="384"></canvas>
@@ -257,10 +263,12 @@
 		// Show calculated points
 		const calculatedPoints = getCurvePoints(pts, o.tension, o.segments, o.closed);		
 		console.info('Calculated points', calculatedPoints);
-		ctx.lineWidth = 1;
-		for(var i = 0; i < calculatedPoints.length; i += 2) {
-			ctx.strokeStyle = 'rgba(0,0,255,0.5)';
-			ctx.strokeRect(calculatedPoints[i] - 1, calculatedPoints[i+1] - 1, 2, 2);
+		if (o.points) {
+			ctx.lineWidth = 1;
+			for(var i = 0; i < calculatedPoints.length; i += 2) {
+				ctx.strokeStyle = 'rgba(0,0,255,0.5)';
+				ctx.strokeRect(calculatedPoints[i] - 1, calculatedPoints[i+1] - 1, 2, 2);
+			}
 		}
 		window.calculatedPoints = calculatedPoints;
 
@@ -329,6 +337,31 @@
 		saveTextAs(JSON.stringify(saveData, null, 2), 'test.spline.json', 'utf-8');
 	}
 	
+	function loadSpline() {
+		var file = document.getElementById('fileToLoad').files[0];
+		var reader = new FileReader();
+		reader.readAsText(file, 'utf-8');
+		
+		reader.onload = evt => {
+			console.info('File loaded.', evt);
+			var loadedData = JSON.parse(evt.target.result);
+			
+			document.getElementById('chkClosed').checked = loadedData.isClosed;
+			document.getElementById('chkFill').checked = loadedData.isFilled;
+			document.getElementById('chkPoints').checked = loadedData.arePointsVisible;
+			document.getElementById('numSegments').value = loadedData.numberOfSegments;
+			document.getElementById('numTension').value = loadedData.tension * 10;
+			pts = objListToFlatPoints(loadedData.originalPoints);
+			
+			drawCurveDemo();
+		}
+		
+		reader.onerror = evt => {
+			console.error('Error while loading file.', evt);
+			alert('Error while loading file.');
+		}
+	}
+	
 	function flatPointsToObjList(flatPoints) {
 		var objList = [];
 		for (var i = 0; i < flatPoints.length; i += 2) {
@@ -338,6 +371,10 @@
 			});
 		}
 		return objList;
+	}
+	
+	function objListToFlatPoints(objList) {
+		return objList.map(o => [o.x, o.y]).flat()
 	}
 
 </script>
