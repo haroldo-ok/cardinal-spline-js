@@ -14,6 +14,8 @@
 
 <head>
 	<title>Spline editor</title>
+		<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+		<meta content="utf-8" http-equiv="encoding">
 
 	<style>
 		body {
@@ -101,6 +103,11 @@
 			border-radius: 50%;
 			margin-left: -4.5mm;
 			margin-top: -4.5mm;
+			cursor: grab;
+		}
+		
+		.editHandle:hover {
+			background: rgba(255, 0, 255, 0.3);
 		}
 	</style>
 </head>
@@ -133,7 +140,14 @@
 			<input id="chkFill" type="checkbox" checked>
 
 			<button onclick="randomize();drawCurveDemo()">Randomize</button>
-		</div>
+			<button onclick="saveSpline()">Save as...</button>
+			<div>
+				<label>
+					Load:
+					<input id="fileToLoad" oninput="loadSpline()" type="file" accept=".json" />
+				</label>
+			</div>
+	   </div>
 
 		<div id="editContainer">
 			<canvas id="demoCanvas" width="512" height="384"></canvas>
@@ -247,13 +261,16 @@
 		}
 		
 		// Show calculated points
-		const calculatedPoints = getCurvePoints(pts, o.tension, o.segments, o.closed);
+		const calculatedPoints = getCurvePoints(pts, o.tension, o.segments, o.closed);		
 		console.info('Calculated points', calculatedPoints);
-		ctx.lineWidth = 1;
-		for(var i = 0; i < calculatedPoints.length; i += 2) {
-			ctx.strokeStyle = 'rgba(0,0,255,0.5)';
-			ctx.strokeRect(calculatedPoints[i] - 1, calculatedPoints[i+1] - 1, 2, 2);
+		if (o.points) {
+			ctx.lineWidth = 1;
+			for(var i = 0; i < calculatedPoints.length; i += 2) {
+				ctx.strokeStyle = 'rgba(0,0,255,0.5)';
+				ctx.strokeRect(calculatedPoints[i] - 1, calculatedPoints[i+1] - 1, 2, 2);
+			}
 		}
+		window.calculatedPoints = calculatedPoints;
 
 		// Remove old drag handles
 		document.querySelectorAll('.editHandle').forEach(el => el.remove());
@@ -302,7 +319,66 @@
 			return false;
 		});
 	}
+	
+	function saveSpline() {
+		var o = new curveOptions();
+		var saveData = {
+			application: 'Cardinal spline editor',
+			version: 0.1,
+			isClosed: o.closed,
+			isFilled: o.fill,
+			arePointsVisible: o.points,
+			numberOfSegments: o.segments,
+			tension: o.tension,
+			originalPoints: flatPointsToObjList(pts),
+			calculatedPoints: flatPointsToObjList(calculatedPoints)
+		};
+		
+		saveTextAs(JSON.stringify(saveData, null, 2), 'test.spline.json', 'utf-8');
+	}
+	
+	function loadSpline() {
+		var file = document.getElementById('fileToLoad').files[0];
+		var reader = new FileReader();
+		reader.readAsText(file, 'utf-8');
+		
+		reader.onload = evt => {
+			console.info('File loaded.', evt);
+			var loadedData = JSON.parse(evt.target.result);
+			
+			document.getElementById('chkClosed').checked = loadedData.isClosed;
+			document.getElementById('chkFill').checked = loadedData.isFilled;
+			document.getElementById('chkPoints').checked = loadedData.arePointsVisible;
+			document.getElementById('numSegments').value = loadedData.numberOfSegments;
+			document.getElementById('numTension').value = loadedData.tension * 10;
+			pts = objListToFlatPoints(loadedData.originalPoints);
+			
+			drawCurveDemo();
+		}
+		
+		reader.onerror = evt => {
+			console.error('Error while loading file.', evt);
+			alert('Error while loading file.');
+		}
+	}
+	
+	function flatPointsToObjList(flatPoints) {
+		var objList = [];
+		for (var i = 0; i < flatPoints.length; i += 2) {
+			objList.push({
+				x: flatPoints[i],
+				y: flatPoints[i + 1]
+			});
+		}
+		return objList;
+	}
+	
+	function objListToFlatPoints(objList) {
+		return objList.map(o => [o.x, o.y]).flat()
+	}
 
 </script>
+<script src="FileSaver.js"></script>
+
 </body>
 </html>
