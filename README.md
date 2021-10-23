@@ -1,6 +1,8 @@
 ﻿Cardinal spline / Catmull-Rom
 =============================
 
+**Attention: This is a version of Cardinal spline customized to add an editor; nothing more was added.**
+
 A Cardinal spline (Cubic Hermite spline interpolation, Catmull-Rom with a tension option)
 implementation for JavaScript/HTML5 which creates an interpolated smooth curve through each
 point pair in the given array. There is no need to specify control points.
